@@ -2,6 +2,8 @@ import json
 from channels.generic.websocket import AsyncWebsocketConsumer
 from urllib.parse import parse_qs
 
+
+from .models import ChatMessage
 from rest_framework_simplejwt.tokens import AccessToken
 from django.contrib.auth import get_user_model
 from asgiref.sync import sync_to_async
@@ -79,6 +81,13 @@ class ChatConsumer(AsyncWebsocketConsumer):
             data = json.loads(text_data)
             message = data.get('message', '')
             print("💬 Mesaj:", message)
+
+            # 💾 Veritabanına kaydet
+            await sync_to_async(ChatMessage.objects.create)(
+                user=self.scope['user'],
+                room=self.room_name,
+                message=message
+            )
 
             await self.channel_layer.group_send(
                 self.room_group_name,
